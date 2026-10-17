@@ -1,0 +1,16 @@
+media/service/UserService.class
+media/dao/UserRepository.class
+media/model/Status.class
+media/dao/BaseRepository$PSSetter.class
+media/dao/BaseRepository.class
+media/model/Article.class
+media/util/DatabaseManager.class
+media/service/ArticleService.class
+media/dao/Repository.class
+media/service/StatisticsService.class
+media/TestConnection.class
+media/exception/BusinessException.class
+media/model/User.class
+media/dao/ArticleRepository.class
+media/MainApp.class
+media/exception/EntityNotFoundException.class
