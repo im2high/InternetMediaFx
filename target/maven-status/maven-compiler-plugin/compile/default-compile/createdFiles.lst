@@ -8,7 +8,6 @@ media/util/DatabaseManager.class
 media/service/ArticleService.class
 media/dao/Repository.class
 media/service/StatisticsService.class
-media/TestConnection.class
 media/exception/BusinessException.class
 media/model/User.class
 media/dao/ArticleRepository.class

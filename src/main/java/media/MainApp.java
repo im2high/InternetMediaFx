@@ -3,6 +3,7 @@ package media;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -57,26 +58,23 @@ public class MainApp extends Application {
             loadData();
         });
 
-        HBox toolbar = new HBox(10); // 10 — расстояние между кнопками
+        HBox toolbar = new HBox(10);
         toolbar.setPadding(new Insets(10));
         toolbar.getChildren().addAll(addBtn, editBtn, deleteBtn, refreshBtn);
 
-        // 3. Собираем окно
         BorderPane root = new BorderPane();
-        root.setTop(toolbar); // панель — сверху
-        root.setCenter(table); // таблица — по центру
+        root.setTop(toolbar);
+        root.setCenter(table);
 
-        Scene scene = new Scene(root, 900, 600);
+        Scene scene = new Scene(root, 1000, 1000);
 
         stage.setTitle("InternetMedia — Статьи");
         stage.setScene(scene);
         stage.show();
 
-        // 4. Загружаем данные
         loadData();
     }
 
-    /** Загружает статьи из БД и заполняет таблицу. */
     private void loadData() {
         try {
             List<Article> articles = service.getAll();
@@ -87,7 +85,6 @@ public class MainApp extends Application {
         }
     }
 
-    /** Показывает окно с ошибкой. */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Ошибка");
@@ -96,28 +93,23 @@ public class MainApp extends Application {
         alert.showAndWait();
     }
 
-    /** Удаляет выбранную статью. */
     private void deleteArticle() {
-        // 1. Получить выбранную статью
         Article selected = table.getSelectionModel().getSelectedItem();
 
-        // 2. Проверка: выбрана ли строка
         if (selected == null) {
             showWarning("Выберите статью для удаления");
             return;
         }
 
-        // 3. Подтверждение
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Подтверждение удаления");
         confirm.setHeaderText(null);
         confirm.setContentText("Удалить статью \"" + selected.getTitle() + "\"?");
 
         if (confirm.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
-            return; // пользователь нажал Отмена
+            return;
         }
 
-        // 4. Удаление
         try {
             service.delete(selected.getId());
             loadData();
@@ -127,7 +119,6 @@ public class MainApp extends Application {
         }
     }
 
-    /** Показывает предупреждение. */
     private void showWarning(String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle("Внимание");
@@ -136,7 +127,6 @@ public class MainApp extends Application {
         alert.showAndWait();
     }
 
-    /** Показывает сообщение об успехе. */
     private void showInfo(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Готово");
@@ -145,17 +135,12 @@ public class MainApp extends Application {
         alert.showAndWait();
     }
 
-    /** Открывает форму добавления статьи. */
     private void openAddForm() {
-        // 1. Создаём диалог
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Добавить статью");
         dialog.setHeaderText("Заполните поля");
-
-        // 2. Кнопки
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        // 3. Поля
         TextField titleField = new TextField();
         titleField.setPromptText("Название статьи");
 
@@ -179,10 +164,9 @@ public class MainApp extends Application {
             return;
         }
 
-        // 4. Раскладка — сетка
         GridPane grid = new GridPane();
-        grid.setHgap(10); // отступ по горизонтали
-        grid.setVgap(10); // отступ по вертикали
+        grid.setHgap(10);
+        grid.setVgap(10);
         grid.setPadding(new javafx.geometry.Insets(20));
 
         grid.add(new Label("Название:"), 0, 0);
@@ -198,39 +182,36 @@ public class MainApp extends Application {
 
         dialog.getDialogPane().setContent(grid);
 
-        // 5. Показываем диалог и ждём нажатия кнопки
-        dialog.showAndWait().ifPresent(buttonType -> {
-            if (buttonType == ButtonType.OK) {
-                try {
-                    // 6. Забираем данные из полей
-                    String title = titleField.getText().trim();
-                    String content = contentArea.getText().trim();
-                    String category = categoryField.getText().trim();
-                    Status status = statusCombo.getValue();
-                    User author = authorCombo.getValue();
+        Button okButton = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
+        okButton.addEventFilter(ActionEvent.ACTION, event -> {
+            String title = titleField.getText().trim();
+            String content = contentArea.getText().trim();
+            String category = categoryField.getText().trim();
+            User author = authorCombo.getValue();
 
-                    // 7. Простая проверка
-                    if (title.isEmpty() || content.isEmpty() || category.isEmpty()) {
-                        showWarning("Заполните все поля");
-                        return;
-                    }
-                    if (author == null) {
-                        showWarning("Выберите автора");
-                        return;
-                    }
+            if (title.isEmpty() || content.isEmpty() || category.isEmpty()) {
+                showWarning("Заполните все поля");
+                event.consume();
+                return;
+            }
+            if (author == null) {
+                showWarning("Выберите автора");
+                event.consume();
+                return;
+            }
 
-                    // 8. Сохраняем через Service
-                    service.createArticle(title, content, category, status, author.getId());
-
-                    // 9. Обновляем таблицу
-                    loadData();
-                    showInfo("Статья добавлена");
-
-                } catch (Exception e) {
-                    showError("Ошибка добавления: " + e.getMessage());
-                }
+            try {
+                service.createArticle(title, content, category,
+                        statusCombo.getValue(), author.getId());
+                loadData();
+                showInfo("Статья добавлена");
+            } catch (Exception e) {
+                showError("Ошибка добавления: " + e.getMessage());
+                event.consume();
             }
         });
+
+        dialog.showAndWait();
     }
 
     public static void main(String[] args) {
